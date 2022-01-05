@@ -1,19 +1,19 @@
----
-title: "NS cod example - find MSY"
-output: github_document
----
-
-```{r setup, include=FALSE}
+#' ---
+#' title: "NS cod example - find MSY"
+#' output: github_document
+#' ---
+#' 
+## ----setup, include=FALSE-------------------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-## Background
-
-This document illustrates finding MSY for NS cod with a stochastic OM.
-
-## Load R packages
-
-```{r results = "hide", message = FALSE, warning = FALSE}
+#' 
+#' ## Background
+#' 
+#' This document illustrates finding MSY for NS cod with a stochastic OM.
+#' 
+#' ## Load R packages
+#' 
+## ----results = "hide", message = FALSE, warning = FALSE-------------------------------
 library(doParallel)
 library(tidyr)
 library(dplyr)
@@ -22,12 +22,12 @@ library(FLash)
 library(ggplotFL)
 
 source("funs.R")
-```
 
-## Load OM(s)
-
-Load stochastic and deterministic OMs
-```{r message = FALSE, warning = FALSE}
+#' 
+#' ## Load OM(s)
+#' 
+#' Load stochastic and deterministic OMs
+## ----message = FALSE, warning = FALSE-------------------------------------------------
 ### FLStock
 stk <- readRDS("OM_files/cod4/stk.rds")
 stk_det <- readRDS("OM_files/cod4/stk_det.rds")
@@ -36,15 +36,15 @@ sr <- readRDS("OM_files/cod4/sr.rds")
 sr_det <- readRDS("OM_files/cod4/sr_det.rds")
 sr_res <- readRDS("OM_files/cod4/sr_res.rds")
 sr_res_det <- readRDS("OM_files/cod4/sr_res_det.rds")
-```
 
-## Stochastic OM
-
-### Explore search space
-
-First, run some F values:
-
-```{r message = FALSE, warning = FALSE}
+#' 
+#' ## Stochastic OM
+#' 
+#' ### Explore search space
+#' 
+#' First, run some F values:
+#' 
+## ----message = FALSE, warning = FALSE-------------------------------------------------
 ### define projection
 proj_yrs <- 2018:2037 ### years used in projection
 Blim <- 107000 ### from ICES WGNSSK 2018 and used by WKNSMSE 2019
@@ -62,11 +62,11 @@ fs <- seq(0, 1, 0.1)
              trace = TRUE, trace_env = env_stochastic)
 }
 runs_stochastic <- bind_rows(get("res_trace", envir = env_stochastic))
-```
 
-We can visualise the results
-
-```{r message = FALSE, warning = FALSE}
+#' 
+#' We can visualise the results
+#' 
+## ----message = FALSE, warning = FALSE-------------------------------------------------
 runs_stochastic %>%
     pivot_longer(SSB:objective) %>%
     ggplot(aes(x = target, y = value)) +
@@ -75,13 +75,13 @@ runs_stochastic %>%
     labs(x = "F target", y = "") +
     geom_blank(data = data.frame(target = 0, value = 0), aes(target, value)) +
     theme_bw()
-```
 
-### Find MSY
-
-The highest catch where Blim risk is <= 5% is somewhere between F = 0.2 and F = 0.5. We can use `optimise` (a golden section search) to find MSY:
-
-```{r message = FALSE, warning = FALSE}
+#' 
+#' ### Find MSY
+#' 
+#' The highest catch where Blim risk is <= 5% is somewhere between F = 0.2 and F = 0.5. We can use `optimise` (a golden section search) to find MSY:
+#' 
+## ----message = FALSE, warning = FALSE-------------------------------------------------
 ### find optimum
 MSY_stochastic <- optimise(f = proj_stats, 
                            stk = stk, sr = sr, sr_res = sr_res, 
@@ -110,12 +110,12 @@ runs_stochastic %>%
     labs(x = "F target", y = "") +
     geom_blank(data = data.frame(target = 0, value = 0), aes(target, value)) +
     theme_bw()
-```
 
-
-## Do the same for the "deterministic" OM
-
-```{r message = FALSE, warning = FALSE}
+#' 
+#' 
+#' ## Do the same for the "deterministic" OM
+#' 
+## ----message = FALSE, warning = FALSE-------------------------------------------------
 env_det <- new.env()
 ### this is needed because "optimise" does not store results
 ### run a few values
@@ -165,10 +165,10 @@ runs_det %>%
     labs(x = "F target", y = "") +
     geom_blank(data = data.frame(target = 0, value = 0), aes(target, value)) +
     theme_bw()
-```
 
-## Compare stochastic and deterministic OM
-```{r message = FALSE, warning = FALSE}
+#' 
+#' ## Compare stochastic and deterministic OM
+## ----message = FALSE, warning = FALSE-------------------------------------------------
 bind_rows(runs_det %>% mutate(MSY = "deterministic"),
           runs_stochastic %>% mutate(MSY = "stochastic")) %>%
     pivot_longer(cols = c(SSB, Catch, Rec, Risk, objective)) %>%
@@ -182,4 +182,4 @@ bind_rows(runs_det %>% mutate(MSY = "deterministic"),
     geom_blank(data = data.frame(target = 0, value = 0, MSY = NA), 
                aes(target, value)) +
     theme_bw()
-```
+
