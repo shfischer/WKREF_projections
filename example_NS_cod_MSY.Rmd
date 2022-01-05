@@ -1,0 +1,61 @@
+---
+title: "NS cod example - find MSY"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+This document illustrates finding MSY for NS cod with a stochastic OM.
+
+## Load R packages
+
+```{r results = "hide", message = FALSE, warning = FALSE}
+library(doParallel)
+library(FLCore)
+library(FLash)
+library(ggplotFL)
+
+source("funs.R")
+```
+
+## Load OM(s)
+
+Load stochastic and deterministic OMs
+```{r message = FALSE, warning = FALSE}
+### FLStock
+stk <- readRDS("OM_files/cod4/stk.rds")
+stk_det <- readRDS("OM_files/cod4/stk_et.rds")
+### recruitment model and residuals
+sr <- readRDS("OM_files/cod4/sr.rds")
+sr_det <- readRDS("OM_files/cod4/sr_det.rds")
+sr_res <- readRDS("OM_files/cod4/sr_res.rds")
+sr_res_det <- readRDS("OM_files/cod4/sr_res_det.rds")
+```
+
+## Stochastic OM
+
+### Explore search space
+
+First, run some F values:
+
+```{r message = FALSE, warning = FALSE}
+### define projection
+proj_yrs <- 2018:2037
+Blim <- 107000 ### from WKNSMSE 2019
+risk_limit = 0.05 ### 5% risk limit
+### set up environment for storing results
+env_stochastic <- new.env()
+### this is needed because "optimise" does not store results
+### run a few values
+fs <- seq(0, 1, 0.1)
+hr_runs <- foreach(target = fs) %do% {
+  
+  proj_stats(stk = stk, sr = sr, sr_res = sr_res, proj_yrs = , target,
+                       Blim, risk_limit = 0.05, stat_yrs,
+                       trace = TRUE, trace_env = env_stochastic)
+}
+```
