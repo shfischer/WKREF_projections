@@ -3,6 +3,8 @@
 ### ------------------------------------------------------------------------ ###
 ### replicate exact R package environment
 
+### clone repository from GitHub and run:
+
 ### prepare renv package
 install.packages("renv")
 renv::activate()
