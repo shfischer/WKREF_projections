@@ -4,7 +4,9 @@
 
 proj_stats <- function(stk, sr, sr_res, proj_yrs, target,
                        Blim, risk_limit = 0.05, stat_yrs,
-                       trace = FALSE, trace_env) {
+                       trace = FALSE, trace_env,
+                       objective = "MSY" ### or "risk"
+                       ) {
   ### check if results exist already
   if (isTRUE(trace)) {
     res_trace_i <- mget("res_trace", envir = trace_env, 
@@ -38,9 +40,17 @@ proj_stats <- function(stk, sr, sr_res, proj_yrs, target,
       Risk = mean(c(ssb(stk_fwd)[, ac(stat_yrs)]) < Blim, na.rm = TRUE),
       objective = NA)
     ### objective function
-    ### maximise catch but restrict risk
-    res_list$objective <- ifelse(res_list$Risk <= risk_limit, 
-                                 res_list$Catch, -1)
+    if (identical(objective, "MSY")) {
+      ### maximise catch but restrict risk
+      res_list$objective <- ifelse(res_list$Risk <= risk_limit, 
+                                   res_list$Catch, -1)
+    } else if (identical(objective, "risk")) {
+      ### find F where risk is 5% 
+      ### use quadratic deviation from 5%
+      res_list$objective <- (res_list$Risk - risk_limit)^2
+    } else {
+      stop("unknown objective")
+    }
     ### store results
     if (isTRUE(trace)) {
       res_add <- res_list
@@ -53,4 +63,3 @@ proj_stats <- function(stk, sr, sr_res, proj_yrs, target,
   ### return objective value for optimisation
   return(res_list$objective)
 }
-
