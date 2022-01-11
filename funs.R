@@ -47,7 +47,7 @@ proj_stats <- function(stk, sr, sr_res, proj_yrs, target,
     } else if (identical(objective, "risk")) {
       ### find F where risk is 5% 
       ### use quadratic deviation from 5%
-      res_list$objective <- (res_list$Risk - risk_limit)^2
+      res_list$objective <- -(res_list$Risk - risk_limit)^2
     } else {
       stop("unknown objective")
     }
