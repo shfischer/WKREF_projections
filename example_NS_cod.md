@@ -32,7 +32,7 @@ projected years.
 
 ``` r
 ### number of simulation iterations/replicates
-n <- 1000
+n <- 50
 ### number of years for projection
 n_years <- 20 - 1 ### -1 because cod includes some intermediate year values
 ```
@@ -118,7 +118,7 @@ stk <- FLCore::propagate(stk, n)
 dim(stk)
 ```
 
-    ## [1]    6   56    1    1    1 1000
+    ## [1]  6 56  1  1  1 50
 
 The `FLfse` package contains the function `SAM_uncertainty()` which
 returns uncertainty estimates from SAM. The source code for this
@@ -197,8 +197,8 @@ table(bio_samples)
 ```
 
     ## bio_samples
-    ##   51   52   53   54   55 
-    ## 3950 3950 4101 4034 3965
+    ##  51  52  53  54  55 
+    ## 187 186 187 210 230
 
 Then, we can insert the data from the selected years.
 
@@ -311,10 +311,11 @@ res_i <- res_i[!is.na(res_i)]
 res_i
 ```
 
-    ##  [1] -0.39667331  0.18032194  0.73624884 -0.06610507  0.17233101 -0.32619588
-    ##  [7] -0.09905677 -0.31577230  0.52905776 -0.05367521  0.12643406 -0.14706790
-    ## [13]  0.19121622 -0.20670682  0.10402039  0.08797301  0.51855970 -0.35727852
-    ## [19] -0.17254420  0.62256026 -1.12844082
+    ##  [1] -0.557561426  0.326209374  0.685851125 -0.579507553  0.004258881
+    ##  [6] -0.382130907 -0.047753881 -0.258553610  0.343228225  0.093881556
+    ## [11] -0.196535215  0.117676948  0.351100269 -0.381191814 -0.196927440
+    ## [16]  0.112746272  0.607729736 -0.165394436 -0.685512668  0.946796616
+    ## [21] -0.138649011
 
 ``` r
 hist(res_i, xlim = c(-1.5, 1.5), ylim = c(0, 2),

@@ -31,7 +31,7 @@ library(FLfse)
 First we define the dimensions for the projection, i.e. the number of simulation replicates (called iterations in FLR) and the number of projected years.
 ```{r}
 ### number of simulation iterations/replicates
-n <- 1000
+n <- 50
 ### number of years for projection
 n_years <- 20 - 1 ### -1 because cod includes some intermediate year values
 ```
