@@ -3,7 +3,7 @@
 #' output: github_document
 #' ---
 #' 
-## ----setup, include=FALSE-------------------------------------------------------------
+## ----setup, include=FALSE---------------------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
 #' 
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #' 
 #' ## Load R packages
 #' 
-## ----results = "hide", message = FALSE, warning = FALSE-------------------------------
+## ----results = "hide", message = FALSE, warning = FALSE---------------------------------
 library(stockassessment)
 library(doParallel)
 library(FLCore)
@@ -29,9 +29,9 @@ library(FLfse)
 #' ## Simulation (projection) specification
 #' 
 #' First we define the dimensions for the projection, i.e. the number of simulation replicates (called iterations in FLR) and the number of projected years.
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### number of simulation iterations/replicates
-n <- 1000
+n <- 50
 ### number of years for projection
 n_years <- 20 - 1 ### -1 because cod includes some intermediate year values
 
@@ -44,14 +44,14 @@ n_years <- 20 - 1 ### -1 because cod includes some intermediate year values
 #' * `cod4_idx.rds`: An `FLIndices` object with the two survey indices (IBTS Q1 and Q3)
 #' * `cod4_conf_sam.rds`: The SAM model configuration
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 data("cod4_stk")
 data("cod4_idx")
 data("cod4_conf_sam")
 
 #' 
 #' We can now replicate the SAM model fit:
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### fit SAM to cod
 fit <- FLR_SAM(stk = cod4_stk, idx = cod4_idx, conf = cod4_conf_sam)
 ### the output is a normal SAM object
@@ -62,7 +62,7 @@ plot(fit)
 #' 
 #' Now we need to convert the results into an FLR object. The main data for the OM will be stored in an `FLStock`:
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### convert SAM model fit into FLStock
 stk <- SAM2FLStock(object = fit, stk = cod4_stk, correct_catch = TRUE)
 ### correct_catch applies the catch scaling applied to cod in 2018
@@ -79,7 +79,7 @@ stk_orig <- stk
 #' 
 #' So far, the FLStock `stk` contains only one replicate - the point estimate (median) from SAM. However, we want to include the uncertainty estimated by SAM and will use SAM's variance-covariance matrix to quantify uncertainty.
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### add iteration dimension
 stk <- FLCore::propagate(stk, n)
 dim(stk)
@@ -87,7 +87,7 @@ dim(stk)
 #' 
 #' The `FLfse` package contains the function `SAM_uncertainty()` which returns uncertainty estimates from SAM. The source code for this functions is available on [GitHub](https://github.com/shfischer/FLfse/blob/64cec8ee86c9309a5b4e84ff1790d0ed594bc7ee/FLfse/R/sam.R#L1181-L1524). See also the help file `?SAM_uncertainty` for details.
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### set random number seed to ensure reproducibility
 set.seed(1)
 ### estimate uncertainty
@@ -97,7 +97,7 @@ uncertainty <- SAM_uncertainty(fit = fit, n = n, print_screen = FALSE,
 
 #' 
 #' Now we can add the noise to the stock
-## ---- warning = FALSE-----------------------------------------------------------------
+## ---- warning = FALSE-------------------------------------------------------------------
 ### add noise to stock numbers
 stock.n(stk)[] <- uncertainty$stock.n
 stock(stk)[] <- computeStock(stk) ### update total stock
@@ -113,7 +113,7 @@ plot(stk, probs = c(0.05, 0.25, 0.5, 0.75, 0.95))
 #' ## Extend stock for projection
 #' 
 #' Now it is time to extend our `FLStock` for the projection:
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 stk_stf <- stf(stk, nyears = n_years)
 
 #' 
@@ -125,7 +125,7 @@ stk_stf <- stf(stk, nyears = n_years)
 #' 
 #' Because we used the ICES WGNSSK 2018 stock assessment, 2018 is an intermediate year and there is no data (such as catch) available for this year. The 2018 values in `stk` are simply averages of previous years. Consequently, we will overwrite these values for the MSE.
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### use last five data years (2013-2017) to sample biological parameters
 sample_yrs <- 2013:2017
 ### get year position of sample years
@@ -133,7 +133,7 @@ sample_yrs_pos <- which(dimnames(stk_stf)$year %in% sample_yrs)
 sample_yrs_pos
 
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 set.seed(2) ### set random number seed
 ### resample historical years
 ### n_years + 1: projection years plus 2018
@@ -144,7 +144,7 @@ table(bio_samples)
 
 #' 
 #' Then, we can insert the data from the selected years. 
-## ---- warning = FALSE-----------------------------------------------------------------
+## ---- warning = FALSE-------------------------------------------------------------------
 ### years to be populated
 bio_yrs <- which(dimnames(stk_stf)$year %in% 2018:dims(stk_stf)$maxyear)
 ### insert values
@@ -163,7 +163,7 @@ plot(window(mat(stk_stf), start = 2000))
 
 #' 
 #' Now we can do the same for the selectivity:
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 set.seed(3)
 ### do the same for selectivity
 sel_samples <- sample(x = sample_yrs_pos, 
@@ -179,7 +179,7 @@ harvest(stk_stf)[, bio_yrs] <- sel_vals
 
 #' 
 #' In the projection, we only consider the total catch and do not distinguish between landings and discards. However, the total catch is automatically split into discards and landings based on an historical average. Catch data for 2018 is missing but we can make the same assumption as in the following projection years.
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 landings.n(stk_stf)[, ac(2018)] <- landings.n(stk_stf)[, ac(2019)]
 discards.n(stk_stf)[, ac(2018)] <- discards.n(stk_stf)[, ac(2019)]
 
@@ -188,7 +188,7 @@ discards.n(stk_stf)[, ac(2018)] <- discards.n(stk_stf)[, ac(2019)]
 #' ## Recruitment
 #' 
 #' If we want to project into the future, we will need to define a stock-recruitment function. There is no clear relationship visible between SSB and recruitment for cod. Also, absolute levels have changed over time (gadoid outburst in the past, currently low SSB and recruitment):
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 srplot(fit)
 
 #' 
@@ -196,7 +196,7 @@ srplot(fit)
 #' 
 #' Consequently, we use the simplest recruitment model which includes density dependence: a segmented regression (or hockey stick model). Also, we restrict the model to the recent past to account for the current low values.
 #' 
-## ---- warning = FALSE, message = FALSE------------------------------------------------
+## ---- warning = FALSE, message = FALSE--------------------------------------------------
 ### create FLSR to store recruitment model
 sr <- as.FLSR(window(stk_stf, start = 1997), model = "segreg")
 ### fit model individually to each replicate
@@ -212,7 +212,7 @@ plot(iter(sr, 1)) ### first replicate only
 #' Because the model is only fitting to 1997-2017, we only have 21 residuals from which we could resample. One way to increase this, is to fit a kernel density smoother to these residuals and then sample from this "smooth" distribution.
 #' 
 #' We can visualise this process with one example replicate:
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### find years where residuals are required
 yrs_res <- colnames(rec(sr))[which(is.na(iterMeans(rec(sr))))]
 iter_i <- 1 ### example replicate
@@ -236,7 +236,7 @@ hist(res_new, col = NULL, border = "blue", add = TRUE, freq = FALSE)
 
 #' 
 #' Do this for all replicates:
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 yrs_res <- colnames(rec(sr))[which(is.na(iterMeans(rec(sr))))]
 ### use foreach to loop through replicates
 sr_res <- foreach(iter_i = seq(dim(sr)[6])) %do% {
@@ -267,7 +267,7 @@ plot(sr_res)
 #' 
 #' ~~SAM quantifies this process error as a standard deviation. This standard deviation is age-dependent but assumed constant over time. In SAM, many quantities, including uncertainty, are on a log-scale, so we need to make sure to get them back to a normal scale. We will save this error as an multiplicative factor in an `FLQuant`.~~
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 # ### create noise for process error
 # proc_res <- stock.n(stk_stf) %=% 0 ### template FLQuant
 # set.seed(3) ### set random number seed
@@ -293,7 +293,7 @@ plot(sr_res)
 #' 
 #' Create a second (deterministic) OM which is based on the point estimates from SAM and ignores the assessment uncertainty.
 #' 
-## ---- warning = FALSE, message = FALSE------------------------------------------------
+## ---- warning = FALSE, message = FALSE--------------------------------------------------
 ### use stochastic OM as template
 stk_stf_det <- stk_stf
 ### overwrite historical data with point estimates
@@ -304,7 +304,7 @@ stk_stf_det[, ac(1963:2017)] <- stk_orig[, ac(1963:2017)]
 #' 
 #' Selectivity needs to be updated because the selectivity samples in the stochastic OM are sampled from replicate-specific values.
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### update and insert
 sel_vals_det <- as.numeric(sapply(seq(n), function(x) {
   c(harvest(stk_stf_det)[, sel_samples_iter[[x]],,,, x])
@@ -321,7 +321,7 @@ plot(harvest(stk_stf_det), probs = c(0.05, 0.25, 0.5, 0.75, 0.95)) +
 #' 
 #' Also, the recruitment model needs to be updated, because SSB and R are the same for every replicate.
 #' 
-## ---- warning = FALSE, message = FALSE------------------------------------------------
+## ---- warning = FALSE, message = FALSE--------------------------------------------------
 ### fit model to SAM point estimate
 sr_det <- as.FLSR(window(stk_orig, start = 1997, 
                          end = dims(stk_stf_det)$maxyear), 
@@ -360,7 +360,7 @@ plot(sr_res_det)
 #' 
 #' This concludes the conditioning of the OM. Lets save the results so that we can use them later.
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### save in OM folder
 path <- "OM_files/cod4/"
 dir.create(path, recursive = TRUE)
@@ -391,7 +391,7 @@ saveRDS(sr_res_det, file = paste0(path, "sr_res_det.rds"))
 #' 
 #' ## Try projecting
 #' 
-## -------------------------------------------------------------------------------------
+## ---------------------------------------------------------------------------------------
 ### set target
 ctrl <- fwdControl(data.frame(year = 2018:2037, 
                               quantity = "f", 

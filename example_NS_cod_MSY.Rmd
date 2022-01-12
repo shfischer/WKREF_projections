@@ -54,7 +54,7 @@ stat_yrs <- 2028:2037 ### years in which catch and risk are calculated (last 10)
 env_stochastic <- new.env()
 ### this is needed because "optimise" does not store results
 ### run a few values
-fs <- seq(0, 1, 0.1)
+fs <- seq(0, 1, 0.01)
 . <- foreach(target = fs) %do% {
   proj_stats(stk = stk, sr = sr, sr_res = sr_res, proj_yrs = proj_yrs, 
              target = target,
@@ -119,7 +119,7 @@ runs_stochastic %>%
 env_det <- new.env()
 ### this is needed because "optimise" does not store results
 ### run a few values
-fs <- seq(0, 1, 0.1)
+fs <- seq(0, 1, 0.01)
 . <- foreach(target = fs) %do% {
   proj_stats(stk = stk_det, sr = sr_det, sr_res = sr_res_det, 
              proj_yrs = proj_yrs, 
@@ -196,7 +196,7 @@ First, run some F values:
 env_stochastic_Fp.05 <- new.env()
 ### this is needed because "optimise" does not store results
 ### run a few values
-fs <- seq(0, 1, 0.1)
+fs <- seq(0, 1, 0.01)
 . <- foreach(target = fs) %do% {
   proj_stats(stk = stk, sr = sr, sr_res = sr_res, proj_yrs = proj_yrs, 
              target = target, objective = "risk",
@@ -275,7 +275,7 @@ Do the same for the deterministic run
 env_det_Fp.05 <- new.env()
 ### this is needed because "optimise" does not store results
 ### run a few values
-fs <- seq(0, 1, 0.1)
+fs <- seq(0, 1, 0.01)
 . <- foreach(target = fs) %do% {
   proj_stats(stk = stk_det, sr = sr_det, sr_res = sr_res_det, proj_yrs = proj_yrs, 
              target = target, objective = "risk",
@@ -324,4 +324,21 @@ runs_det_Fp.05 %>%
     geom_blank(data = data.frame(target = 0, value = 0), aes(target, value)) +
     theme_bw()
 ```
-
+## Compare stochastic and deterministic OM
+```{r message = FALSE, warning = FALSE}
+bind_rows(runs_det_Fp.05 %>% mutate(MSY = "deterministic"),
+          runs_stochastic_Fp.05 %>% mutate(MSY = "stochastic")) %>%
+    #pivot_longer(cols = c(SSB, Catch, Rec, Risk, objective)) %>%
+    ggplot(aes(x = target, y = Risk, colour = MSY)) +
+    geom_line() +
+    #facet_wrap(~name, scales = "free_y") +
+    geom_vline(data = data.frame(MSY = c("deterministic", "stochastic"),
+                                 x = c(MSY_det_Fp.05$maximum, 
+                                       MSY_stochastic_Fp.05$maximum)),
+               aes(xintercept = x, colour = MSY), linetype = "dashed") + 
+    geom_hline(yintercept = 0.05, colour = "grey", linetype = "dashed") +
+    labs(x = "F target", y = "") +
+    geom_blank(data = data.frame(target = 0, value = 0, MSY = NA), 
+               aes(target, value)) +
+    theme_bw()
+```
